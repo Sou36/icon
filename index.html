@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Circle Crop Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        canvas { margin-top: 20px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <h1>円アイコンに画像を変換</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <br>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <br>
+    <button id="downloadBtn" style="display:none;">画像をダウンロード</button>
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        imageInput.addEventListener('change', function() {
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const size = Math.min(img.width, img.height);
+                    canvas.width = size;
+                    canvas.height = size;
+
+                    // 円形に切り取る
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, size, size);
+                    ctx.restore();
+
+                    // Canvasを表示
+                    canvas.style.display = 'block';
+                    downloadBtn.style.display = 'block';
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'cropped_image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
