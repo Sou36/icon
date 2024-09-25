@@ -3,52 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Circle Crop Tool</title>
+    <title>円形アイコン画像ツール</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        canvas { margin-top: 20px; border-radius: 50%; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0 10px;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px; /* 最大幅を設定 */
+        }
+        input[type="file"] {
+            margin-top: 20px;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%; /* フル幅 */
+        }
+        input[type="file"]:hover {
+            background-color: #f0f0f0;
+        }
+        canvas {
+            margin-top: 20px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none;
+            max-width: 100%; /* キャンバスの幅を画面幅に合わせる */
+            height: auto;    /* 高さを自動調整 */
+        }
+        #downloadBtn, .moveBtn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            width: 100%; /* ボタンをフル幅に */
+        }
+        #downloadBtn:hover, .moveBtn:hover {
+            background-color: #45a049;
+        }
+        .moveControls {
+            display: flex;
+            justify-content: space-between; /* ボタンを両端に配置 */
+            margin-top: 20px;
+        }
+        .moveControls button {
+            margin: 0 5px;
+            flex: 1; /* ボタンの幅を均等に */
+        }
+
+        /* メディアクエリでスマホ向けのスタイルを設定 */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 20px;
+            }
+            .moveControls {
+                flex-direction: column; /* スマホではボタンを縦に並べる */
+            }
+            .moveControls button {
+                margin: 5px 0;
+                width: 100%; /* ボタンをフル幅に */
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>円アイコンに画像を変換</h1>
-    <input type="file" id="imageInput" accept="image/*">
-    <br>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <br>
-    <button id="downloadBtn" style="display:none;">画像をダウンロード</button>
+    <div class="container">
+        <h1>円形アイコンに画像を変換</h1>
+        <p>このヒラメ産のツールは画像をアイコンの形にくり取ることができる！すげぇ！</p>
+        <h2>1.ファイルをアップロード</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <br>
+        <canvas id="canvas"></canvas>
+        <br>
+        <h2>2.ボタンで画像の位置を調節</h2>
+        <div class="moveControls">
+            <button class="moveBtn" id="leftBtn">←</button>
+            <button class="moveBtn" id="upBtn">↑</button>
+            <button class="moveBtn" id="downBtn">↓</button>
+            <button class="moveBtn" id="rightBtn">→</button>
+        </div>
+        <h2>3.あとは完成した画像をダウンロードして完了！</h2>
+        <button id="downloadBtn">画像をダウンロード</button>
+    </div>
+
     <script>
         const imageInput = document.getElementById('imageInput');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const downloadBtn = document.getElementById('downloadBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const upBtn = document.getElementById('upBtn');
+        const downBtn = document.getElementById('downBtn');
+
+        let img;
+        let offsetX = 0;
+        let offsetY = 0;
+        let imgSize;
+
+        function drawImage() {
+            const size = imgSize;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(img, offsetX, offsetY, img.width, img.height, 0, 0, size, size);
+            ctx.restore();
+        }
 
         imageInput.addEventListener('change', function() {
             const file = imageInput.files[0];
             const reader = new FileReader();
 
             reader.onload = function(event) {
-                const img = new Image();
+                img = new Image();
                 img.onload = function() {
-                    const size = Math.min(img.width, img.height);
-                    canvas.width = size;
-                    canvas.height = size;
+                    imgSize = Math.min(img.width, img.height);
+                    canvas.width = imgSize;
+                    canvas.height = imgSize;
 
-                    // 円形に切り取る
-                    ctx.clearRect(0, 0, size, size);
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-                    ctx.clip();
-                    ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, size, size);
-                    ctx.restore();
+                    offsetX = (imgSize - img.width) / 2;
+                    offsetY = (imgSize - img.height) / 2;
 
-                    // Canvasを表示
+                    drawImage();
+
                     canvas.style.display = 'block';
                     downloadBtn.style.display = 'block';
                 }
                 img.src = event.target.result;
             }
             reader.readAsDataURL(file);
+        });
+
+        leftBtn.addEventListener('click', function() {
+            offsetX += 10;
+            drawImage();
+        });
+
+        rightBtn.addEventListener('click', function() {
+            offsetX -= 10;
+            drawImage();
+        });
+
+        upBtn.addEventListener('click', function() {
+            offsetY += 10;
+            drawImage();
+        });
+
+        downBtn.addEventListener('click', function() {
+            offsetY -= 10;
+            drawImage();
         });
 
         downloadBtn.addEventListener('click', function() {
